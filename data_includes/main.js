@@ -161,6 +161,8 @@ Template("stimuli.csv", row =>
     .log("Stimulus", row.Stimulus)
     .log("Type", row.Type)
     .log("Block", row.Block)
+    .log("Order", row.Order)
+    .log("Item", row.Item)
     .log("Subject", getVar("Subject"))
     .log("RT_yes", getVar("RT_yes"))
     .log("RT_no", getVar("RT_no"))
