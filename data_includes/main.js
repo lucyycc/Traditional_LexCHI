@@ -12,7 +12,9 @@ PennController.ResetPrefix(null);
 PennController.DebugOff();
 
 // Sequence: calibration first, then instructions, trials, closing
-PennController.Sequence("calibration", "LexTale_instructions", "LexTale_trials", "closing");
+Sequence("calibration", "preloadExperiment", "LexTale_instructions", "LexTale_trials", SendResults(), "closing");
+CheckPreloaded( startsWith("LexTale_trials") )
+    .label( "preloadExperiment" )
 
 ///// CALIBRATION TRIAL (measures audio latency)
 PennController("calibration",
@@ -80,81 +82,78 @@ PennController("LexTale_instructions",
    
 
 ///// MAIN TRIAL TEMPLATE
-PennController.Template(
-    "stimuli.csv",
-    row => PennController("LexTale_trials",
+Template("stimuli.csv", row =>
+    newTrial("LexTale_trials",
+        // Initialize timing and subject vars
+        newVar("audioStart").global().set(0),
+        newVar("playRequestTime").global().set(0),
+        newVar("RT_yes").global().set("NA"),
+        newVar("RT_no").global().set("NA"),
+        newVar("AudioLatency").global().set("NA"),  // Initialize for logging
+        newVar("Subject").global().set("NA"),       // Set this somewhere earlier
 
-        // Per-trial timing vars (made global so logs can read them reliably)
-        newVar("audioStart").settings.global().set(0),
-        newVar("RT_yes").settings.global().set("NA"),
-        newVar("RT_no").settings.global().set("NA"),
-
-        // Visual stimulus: print immediately (optional; you can move this after audio wait if you want text and audio to appear simultaneously)
-       newText("stimulus", row.Stimulus)
-             .settings.css("font-size", "60px")
-             .settings.css("font-family", "avenir")
-             .settings.bold()
-             .settings.center()
+        
+        // Show stimulus (could move before audio if you want)
+        newText("stimulus", row.Stimulus)
+             .css("font-size", "60px")
+             .css("font-family", "Avenir")
+             .bold()
+             .center()
              .print(),
-
-
-        // Choice labels (printed with canvas later)
-        newText("no", "不是中文語詞")
-            .settings.css("font-size", "40px")
-            .settings.css("font-family", "avenir")
-            .settings.color("red")
-            .settings.bold(),
-
-        newText("yes", "是中文語詞")
-            .settings.css("font-size", "40px")
-            .settings.css("font-family", "avenir")
-            .settings.color("green")
-            .settings.bold(),
-
-        // Start audio playback (recording the request time and waiting for the 'first' event)
-        // record play request time
-        getVar("playRequestTime").set(v => Date.now()),
-
-        // play the trial audio
+    
+      // play the trial audio
         newAudio("audio", row.AudioFile)
             .play(),
 
-        // wait until audio actually starts (this blocks until the browser reports audio has begun)
-        getAudio("audio").wait("first"),
+        // Choice labels
+        newText("no", "不是中文語詞")
+            .css("font-size", "40px")
+            .css("font-family", "Avenir")
+            .color("red")
+            .bold(),
 
-        // now set the actual audio start timestamp (excluded from latency)
-        getVar("audioStart").set(v => Date.now()),
+        newText("yes", "是中文語詞")
+            .css("font-size", "40px")
+            .css("font-family", "Avenir")
+            .color("green")
+            .bold(),
 
-        // Layout choices on a canvas (use .settings.add)
+        // Record play request time
+        getVar("playRequestTime").set(v => Date.now()),
+
+        // Layout choices
         newCanvas("choiceCanvas", 800, 600)
-            .settings.add(0, 100, getText("no"))
-            .settings.add(500, 100, getText("yes"))
+            .add(0, 100, getText("no"))
+            .add(500, 100, getText("yes"))
             .print(),
 
         // Selector: wait for response. On response, compute RT relative to actual audio start.
-      newSelector("choice")
-            .settings.add( getText("no"), getText("yes") )
-            .settings.log()
+        newSelector("choice")
+            .add(getText("no"), getText("yes"))
+            .log()
             .wait(),
-        // If 'yes' selected => set RT_yes, RT_no="NA"
-                getSelector("choice").test.selected( getText("yes") )
-                    .success(
-                        getVar("RT_yes").set(v => Date.now() - getVar("audioStart").value),
-                        getVar("RT_no").set("NA")
-                    )
-                    .failure(
-                        // else => 'no' selected
-                        getVar("RT_no").set(v => Date.now() - getVar("audioStart").value),
-                        getVar("RT_yes").set("NA")
-                    )
+        getSelector("choice").test.selected(getText("yes"))
+            .success(
+                getVar("RT_yes").set(v => Date.now() - getVar("audioStart").value),
+                getVar("RT_no").set("NA")
+            )
+            .failure(
+                getVar("RT_no").set(v => Date.now() - getVar("audioStart").value),
+                getVar("RT_yes").set("NA")
             ),
 
-        // Log RT variables and audio latency (from calibration)
+
+        // Wait for audio to start
+        getAudio("audio").wait("first"),
+
+        // Set actual audio start timestamp
+        getVar("audioStart").set(v => Date.now()),
+        // Log RT and latency
         getVar("RT_yes").log(),
         getVar("RT_no").log(),
-        getVar("AudioLatency").log()
+        getVar("AudioLatency").log()  // If you set this somewhere else
     )
-    // Trial-level logs
+    // Trial-level logging
     .log("Stimulus", row.Stimulus)
     .log("Type", row.Type)
     .log("Block", row.Block)
