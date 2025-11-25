@@ -24,6 +24,7 @@ PennController("calibration",
 
     newButton("StartCalibration", "開始校正")
         .print()
+        .center()
         .wait(),
 
     // Vars to hold timestamps/latency
@@ -48,6 +49,7 @@ PennController("calibration",
 
     newButton("Continue", "繼續")
         .print()
+        .center()
         .wait()
 )
 .log("AudioLatency", getVar("AudioLatency"));
