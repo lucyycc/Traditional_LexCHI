@@ -2,7 +2,7 @@
 
 PCIbex implementation of Traditional Mandarin LexCHI materials adapted from Wen et al. (2024)
 
-Script to implement the LexTALE test (Lemhöfer & Broersma, 2012) in Ibex using PennController
+Script to implement the LexTALE test (Lemhöfer & Broersma, 2012) in PCIbex using PennController
 
 Author of original text-based English script: Mieke Slim
 
