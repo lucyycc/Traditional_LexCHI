@@ -8,7 +8,8 @@
 
 
 PennController.ResetPrefix(null);
-// PennController.DebugOff();
+
+PennController.DebugOff();
 
 // Sequence: calibration first, then instructions, trials, closing
 PennController.Sequence("calibration", "LexTale_instructions", "LexTale_trials", "closing");
@@ -16,7 +17,7 @@ PennController.Sequence("calibration", "LexTale_instructions", "LexTale_trials",
 ///// CALIBRATION TRIAL (measures audio latency)
 PennController("calibration",
     newText("calibInfo",
-        "我們正在校正您的電腦撥放音檔的延遲速度。請您戴上耳機。按下「開始校正」後，您會聽到一個提示音。"
+        "我們正在校正您的電腦撥放音檔的延遲速度。請您戴上耳機。按下「開始校正」後，您會聽到一個提示音，播放完畢之後＂繼續＂鍵會出現。請您點選＂繼續＂開始接下來的測驗。"
     ).print(),
 
     newButton("StartCalibration", "開始校正")
@@ -43,13 +44,6 @@ PennController("calibration",
         v => getVar("audioStartTime").value - getVar("playRequestTime").value
     ),
 
-    // Show result to participant
-  newText("result", "")
-        .settings.text(
-         v => "音檔延遲: " + getVar("AudioLatency").value + " ms"
-        )
-        .print(),
-
     newButton("Continue", "繼續")
         .print()
         .wait()
@@ -70,7 +64,7 @@ PennController("LexTale_instructions",
         .print(),
 
     // Remove .log() — TextInput cannot log
-    newTextInput("Subject", Math.floor(Math.random() * 1000000))
+    newTextInput("Subject")
         .print(),
 
     newButton("Start", "開始測驗")
@@ -138,12 +132,11 @@ PennController.Template(
             .print(),
 
         // Selector: wait for response. On response, compute RT relative to actual audio start.
-        newSelector("choice")
-            .add( getText("no"), getText("yes") )
-            .log()
-            .wait()
-            .success(
-                // If 'yes' selected => set RT_yes, RT_no="NA"
+      newSelector("choice")
+            .settings.add( getText("no"), getText("yes") )
+            .settings.log()
+            .wait(),
+        // If 'yes' selected => set RT_yes, RT_no="NA"
                 getSelector("choice").test.selected( getText("yes") )
                     .success(
                         getVar("RT_yes").set(v => Date.now() - getVar("audioStart").value),
